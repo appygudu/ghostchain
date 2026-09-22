@@ -4,8 +4,6 @@ A night-field stealth game. Walk your person, stand on glowing computers, steal 
 
 **This is only a game. In-game bitcoin is fictional and is not real currency. Nothing here can be withdrawn, exchanged, or cashed out.**
 
-Live game: play in the Grok app preview. This repo is the source.
-
 ## Play
 
 You get **3 free nights**. After that, lifetime access is **₹50** via Razorpay (UPI, cards, netbanking). The purchase unlocks unlimited nights on that device. It does not buy real bitcoin.
@@ -14,20 +12,15 @@ Controls: WASD / arrows / on-screen stick to walk. Hold Shift or push the stick 
 
 ## Razorpay (lifetime ₹50)
 
-Checkout uses Razorpay Orders + Standard Checkout.
+Checkout uses the live Razorpay hosted payment link (same merchant as Aether Latch — APOORVA SHARMA). No API keys required.
 
-Set these on the server (never commit them):
+| | |
+| --- | --- |
+| Pay | [https://rzp.io/rzp/9v5vQRc4](https://rzp.io/rzp/9v5vQRc4) |
+| Amount shown in-game | ₹50 one-time lifetime |
+| After paying | **I've paid — Unlock lifetime** marks this browser |
 
-| Variable | Where | Purpose |
-| --- | --- | --- |
-| `RAZORPAY_KEY_ID` | server | Public key, also sent to Checkout |
-| `RAZORPAY_KEY_SECRET` | server | Signs orders and verifies payments |
-
-Optional alias: `VITE_RAZORPAY_KEY_ID` (public only). **Never** expose the secret to the browser.
-
-Amount is `5000` paise (₹50 INR), one-time, product note `ghostchain-lifetime`.
-
-Until those keys are set, the paywall still appears after 3 nights and Razorpay will explain that checkout is not connected.
+Hosted links cannot callback without a backend, so unlock is confirmed in this browser after you return from Razorpay (`src/lib/game/pay.ts`).
 
 ## Stack
 
