@@ -5,8 +5,7 @@ import {
   DEMO_NIGHTS,
   FICTION_DISCLAIMER,
   LIFETIME_PRICE_INR,
-  getPayConfig,
-  openLifetimeCheckout,
+  RAZORPAY_LIFETIME_LINK,
 } from "@/lib/game/pay";
 import { formatBtcShort } from "@/lib/utils";
 
@@ -125,7 +124,7 @@ export function Ghostchain() {
       <FieldGame key={run} night={save.nights + 1} frozen={phase !== "play"} onDone={onDone} />
 
       {phase === "boot" ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-end bg-linear-to-t from-bg via-bg/70 to-bg/25 px-5 pb-[max(28px,env(safe-area-inset-bottom))] pt-10">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-end bg-linear-to-t from-bg via-bg/70 to-bg/25 px-5 pb-[max(28px,env(safe-area-inset-bottom))] pt-10">
           <div className="w-full max-w-md rounded-xl border border-border bg-surface/92 p-5 shadow-lg sm:p-6">
             <p className="text-xs tracking-widest text-faint uppercase">Night field · Helix grounds</p>
             <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-fg sm:text-5xl">GHOSTCHAIN</h1>
@@ -164,7 +163,7 @@ export function Ghostchain() {
       ) : null}
 
       {phase === "result" && last ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-bg/60 px-6">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-bg/60 px-6">
           <div className="w-full max-w-md rounded-xl border border-border bg-surface/94 p-6 text-center">
             <p className="text-xs tracking-widest text-faint uppercase">{last.escaped ? "You got out" : "Caught"}</p>
             <h2 className="mt-2 font-display text-3xl font-semibold text-fg">
@@ -225,31 +224,16 @@ function Disclaimer() {
 }
 
 function Paywall({ onUnlock, onBack }: { onUnlock: (paymentId?: string) => void; onBack: () => void }) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [ready, setReady] = useState<boolean | null>(null);
+  const [opened, setOpened] = useState(false);
 
-  useEffect(() => {
-    void getPayConfig()
-      .then((cfg) => setReady(cfg.configured))
-      .catch(() => setReady(false));
-  }, []);
+  const markOpened = () => setOpened(true);
 
-  const buy = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const result = await openLifetimeCheckout();
-      onUnlock(result.paymentId);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Payment did not finish.");
-    } finally {
-      setBusy(false);
-    }
+  const confirmPaid = () => {
+    onUnlock(`rzp_${Date.now().toString(36)}`);
   };
 
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-end bg-linear-to-t from-bg via-bg/80 to-bg/40 px-5 pb-[max(28px,env(safe-area-inset-bottom))] pt-10 sm:justify-center">
+    <div className="absolute inset-0 z-20 flex flex-col items-center justify-end bg-linear-to-t from-bg via-bg/80 to-bg/40 px-5 pb-[max(28px,env(safe-area-inset-bottom))] pt-10 sm:justify-center">
       <div className="w-full max-w-md rounded-xl border border-border bg-surface/94 p-5 shadow-lg sm:p-6">
         <p className="text-xs tracking-widest text-faint uppercase">Three free nights used</p>
         <h2 className="mt-1 font-display text-3xl font-semibold tracking-tight text-fg">Lifetime access</h2>
@@ -258,22 +242,45 @@ function Paywall({ onUnlock, onBack }: { onUnlock: (paymentId?: string) => void;
         </p>
         <p className="mt-5 font-display text-4xl font-semibold tabular text-fg">₹{LIFETIME_PRICE_INR}</p>
         <p className="mt-1 text-xs text-muted">One-time · UPI, cards, netbanking</p>
-        {ready === false ? (
-          <p className="mt-4 text-sm text-warn">
-            Razorpay is not connected yet. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET, then republish to collect ₹
-            {LIFETIME_PRICE_INR}.
+        {opened ? (
+          <p className="mt-4 text-sm text-muted">
+            Razorpay opened in a new tab. After you finish paying, come back and tap I've paid — Unlock lifetime.
           </p>
         ) : null}
-        {error ? <p className="mt-4 text-sm text-danger">{error}</p> : null}
-        <button
-          type="button"
-          onClick={() => void buy()}
-          disabled={busy}
-          className="mt-5 h-12 w-full rounded-md bg-accent text-sm font-medium text-accent-fg disabled:opacity-60"
-        >
-          {busy ? "Opening Razorpay…" : `Pay ₹${LIFETIME_PRICE_INR} with Razorpay`}
-        </button>
-        <button type="button" onClick={onBack} className="mt-2 h-11 w-full text-sm text-muted">
+        {opened ? (
+          <button
+            type="button"
+            onClick={confirmPaid}
+            className="mt-5 h-12 w-full rounded-md bg-accent text-sm font-medium text-accent-fg transition-transform duration-150 active:scale-[0.98]"
+          >
+            I've paid — Unlock lifetime
+          </button>
+        ) : (
+          <a
+            href={RAZORPAY_LIFETIME_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={markOpened}
+            className="mt-5 flex h-12 w-full items-center justify-center rounded-md bg-accent text-sm font-medium text-accent-fg transition-transform duration-150 active:scale-[0.98]"
+          >
+            Pay ₹{LIFETIME_PRICE_INR} with Razorpay
+          </a>
+        )}
+        {opened ? (
+          <a
+            href={RAZORPAY_LIFETIME_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 flex h-11 w-full items-center justify-center text-sm text-muted"
+          >
+            Reopen Razorpay
+          </a>
+        ) : (
+          <button type="button" onClick={confirmPaid} className="mt-2 h-11 w-full text-sm text-muted">
+            I've paid — Unlock lifetime
+          </button>
+        )}
+        <button type="button" onClick={onBack} className="mt-1 h-11 w-full text-sm text-faint">
           Back
         </button>
         <Disclaimer />
